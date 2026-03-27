@@ -3,6 +3,51 @@ on: [push, pull_request]
 
 jobs:
   security:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Pull in your code
+      - uses: actions/checkout@v3
+
+      # 2. Set up Python 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      # 3. Install project dependencies
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 4. Install security tools
+      - name: Install security tools
+        run: pip install bandit safety
+
+      # 5. SAST — only report MEDIUM and HIGH
+      - name: SAST — Bandit
+        run: bandit -r . -ll
+
+      # 6. SCA — check for vulnerable packages
+      - name: SCA — Safety
+        run: safety check
+
+      # 7. Save an HTML report as a pipeline artifact
+      - name: Generate HTML report
+        if: always()
+        run: bandit -r . -ll -f html -o security_report.html || true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-report
+          path: security_report.html
+name: Security Pipeline
+on: [push, pull_request]
+
+jobs:
+  security:
 runs-on: ubuntu-latest
 
     steps:
